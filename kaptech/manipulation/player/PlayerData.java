@@ -23,18 +23,21 @@ public class PlayerData {
 	
 	public Minecraft getMinecraft() {
 		if(this.minecraft == null)this.minecraft = Minecraft.getMinecraft();
+		syncData();
 		return this.minecraft;		
 	}
 
 	public void syncData() {
-		this.heldSlot = getMinecraft().player.inventory.currentItem;
+		if(this.minecraft == null)this.minecraft = Minecraft.getMinecraft();
 		
-		this.player = getMinecraft().player;
-		this.playerController = getMinecraft().playerController;
+		this.heldSlot = minecraft.player.inventory.currentItem;
 		
-		this.playerScreen = getMinecraft().currentScreen;
-		this.playerOpenContainer = getMinecraft().player.openContainer;
-		this.playerInventory = getMinecraft().player.inventory;
+		this.player = minecraft.player;
+		this.playerController = minecraft.playerController;
+		
+		this.playerScreen = minecraft.currentScreen;
+		this.playerOpenContainer = minecraft.player.openContainer;
+		this.playerInventory = minecraft.player.inventory;
 	}
 	
 }

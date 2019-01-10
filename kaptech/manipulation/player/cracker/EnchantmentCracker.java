@@ -3,6 +3,7 @@ package kaptainwutax.kaptech.manipulation.player.cracker;
 import java.util.ArrayList;
 
 import kaptainwutax.kaptech.manipulation.SeedState;
+import kaptainwutax.kaptech.manipulation.player.PlayerManipulation;
 
 public class EnchantmentCracker extends Cracker {
 	
@@ -61,7 +62,9 @@ public class EnchantmentCracker extends Cracker {
 		if(foundSeed == this.getPlayerSeed())return false;
 		
 		this.playerSeed = foundSeed;
-		System.out.print("Player seed was found : [" + this.playerSeed + "].\n");		
+		System.out.print("Player seed was found : [" + this.playerSeed + "].\n");	
+		
+		PlayerManipulation.getPlayerManip().setPlayerSeed(this.playerSeed);
 		return true;
 	}
 

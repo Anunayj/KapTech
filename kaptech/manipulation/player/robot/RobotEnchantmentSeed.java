@@ -9,6 +9,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.ClickType;
+import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ContainerEnchantment;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -27,6 +28,7 @@ public class RobotEnchantmentSeed {
 	 * if(Keyboard.isKeyDown(Keyboard.KEY_C)) {
      *		if(this.ticksExisted % 20 == 0)RobotEnchantmentSeed.startRobot();
      * }
+     * 
      * RobotEnchantmentSeed.onUpdate();
 	 * */
 	static int[] inventorySlots = {-1, -1, -1};
@@ -45,8 +47,10 @@ public class RobotEnchantmentSeed {
 		InventoryPlayer inventory = data.playerInventory;
 		ContainerEnchantment enchContainer = null;
 		
+		/*Does a bunch of checks to see if the player CAN activate the robot.*/
 		if(!player.isCreative() && player.experienceLevel < 2) {
 			System.out.println("Not enough experience to perform the enchanting.");
+			return;
 		}
 		
 		for(int s = 0; s < 9; ++s) {
@@ -70,45 +74,55 @@ public class RobotEnchantmentSeed {
 			}
 		}
 		
+		/*Switches the current item the player is holding to the enchantment table.*/
 		mc.player.inventory.currentItem = inventorySlots[0];
 		mc.getConnection().sendPacket(new CPacketHeldItemChange(inventorySlots[0]));
 		
+		/*Place a enchantment table towards the east and opens it.*/
 		BlockPos pos = mc.player.getPosition().east(2);
 		mc.getConnection().sendPacket(new CPacketPlayerTryUseItemOnBlock(pos, EnumFacing.UP, EnumHand.MAIN_HAND, 0.0f, 0.0f, 0.0f));		
-		mc.getConnection().sendPacket(new CPacketPlayerTryUseItemOnBlock(pos, EnumFacing.UP, EnumHand.MAIN_HAND, 0.0f, 0.0f, 0.0f));			
+		mc.getConnection().sendPacket(new CPacketPlayerTryUseItemOnBlock(pos, EnumFacing.UP, EnumHand.MAIN_HAND, 0.0f, 0.0f, 0.0f));
+		
+		/*We don't do anything yet because the client still doesn't know that the enchantment container is open.*/
 	}
 	
 	public static void onUpdate() {
 		if(!isRobotRunning)return;
-		PlayerManipulation manip = PlayerManipulation.getPlayerManip();
-		PlayerData data = manip.getData();
+
+		PlayerData data = PlayerManipulation.getPlayerManip().getData();
 		Minecraft mc = data.getMinecraft();
-		if(data.playerScreen == null)return;
+
+		Container container = data.playerOpenContainer;
+        
+        /*Checks if the player got the right-click packet and asked the client to open the enchantment window.*/
+        if(data.playerScreen == null || !(container instanceof ContainerEnchantment))return;
 		
+		/*Some useful objects...*/
 		EntityPlayer player = data.player;
 		PlayerControllerMP playerController = data.playerController;
-		InventoryPlayer inventory = data.playerInventory;
-		ContainerEnchantment enchContainer = null;
-	
-        data.syncData();
-        
-		try{enchContainer = (ContainerEnchantment)data.playerOpenContainer;} catch(Exception e) {return;}
 		
+		/*Puts the item in the enchant item slot.*/
 		playerController.windowClick(player.openContainer.windowId, inventorySlots[1] + 29, 0, ClickType.QUICK_MOVE, player);	
 	
+		/*If the player is in creative mode, add some lapis.*/
 		if(!player.isCreative()) {
 			playerController.windowClick(player.openContainer.windowId, inventorySlots[2] + 29, 0, ClickType.QUICK_MOVE, player);	
 		}
 		
+		/*Enchant the item.*/
 		mc.getConnection().sendPacket(new CPacketEnchantItem(player.openContainer.windowId, 0));	
 		
+		/*Take the enchanted item and lapis back.*/
 		playerController.windowClick(player.openContainer.windowId, 0, 0, ClickType.QUICK_MOVE, player);	
 		playerController.windowClick(player.openContainer.windowId, 1, 0, ClickType.QUICK_MOVE, player);
 		
+		/*Tell the server to close the window.*/
 		mc.getConnection().sendPacket(new CPacketCloseWindow(player.openContainer.windowId));	
 		
+		/*Close the window on the client.*/
 		mc.displayGuiScreen(null);
 		
+		/*Sync the data to PlayerData and reset the robot.*/
 		data.syncData();
 		isRobotRunning = false;
 		inventorySlots = new int[] {-1, -1, -1};
